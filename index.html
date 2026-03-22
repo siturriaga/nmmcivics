@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#050608">
+<title>SEMION&#8482; v4</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#9672;</text></svg>">
+<link rel="manifest" href="/manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Lora:ital,wght@0,400;0,500;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="semion-ui.css">
+</head>
+<body>
+<div id="bg"><div class="orb orb1"></div><div class="orb orb2"></div><div class="orb orb3"></div></div>
+<div id="grain"></div><div id="bg-tint"></div>
+<div id="process-line"></div>
+<div id="village-loading"></div>
+<div id="sheet-backdrop" class="sheet-backdrop" onclick="closeAllSheets()"></div>
+
+<div id="history-panel">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+    <span style="font-family:Cormorant Garamond,serif;font-size:18px;font-weight:300;letter-spacing:.15em">History</span>
+    <button class="icon-btn" style="margin-left:auto" onclick="closeHistory()">&#10005;</button>
+  </div>
+  <div id="history-list"><div style="font-family:DM Mono,monospace;font-size:10px;color:rgba(234,226,214,.2);text-align:center;padding:20px">No history yet</div></div>
+</div>
+
+<div id="image-panel">
+  <div style="display:flex;align-items:center;gap:10px;padding:16px;width:100%;max-width:700px">
+    <span style="font-family:Cormorant Garamond,serif;font-size:18px;font-weight:300;letter-spacing:.15em;color:var(--parchment)">SEMION Image</span>
+    <button class="icon-btn" style="margin-left:auto" onclick="closeImagePanel()">&#10005;</button>
+  </div>
+  <img id="gen-image" class="img-generated" style="display:none" alt="Generated">
+  <div id="img-loading" style="font-family:DM Mono,monospace;font-size:10px;color:rgba(201,160,80,.6);letter-spacing:.2em">GENERATING IMAGE&#8230;</div>
+  <div id="img-prompt-display" class="img-prompt"></div>
+  <div class="img-controls">
+    <button class="share-btn" onclick="copyImageURL()">Copy URL</button>
+    <button class="share-btn" onclick="copyImagePrompt()">Copy Prompt</button>
+    <button class="share-btn" onclick="openImageFull()">Open Full Size</button>
+    <button class="share-btn" onclick="closeImagePanel()">Close</button>
+  </div>
+</div>
+
+<div id="app">
+<header id="hdr">
+  <div class="logo" onclick="goHome()">SEMION<em>&#8482;</em></div>
+  <span id="hpill" class="hstatus ready">READY</span>
+  <div class="hright">
+    <button class="icon-btn" id="test-btn" onclick="testConnection()" title="Status" style="color:var(--gold);border-color:var(--gold-dim);font-size:13px">&#9881;</button>
+    <button class="icon-btn" id="voice-btn" onclick="toggleVoice()" title="Voice">&#127908;</button>
+    <button class="icon-btn" onclick="openHistory()" title="History">&#9687;</button>
+    <button class="icon-btn" onclick="openEnc()" title="Encoder">&#9889;</button>
+    <button class="icon-btn" onclick="openOmniHub()" title="OmniHub" style="font-size:13px">&#11041;</button>
+    <button id="auth-signin-btn" class="icon-btn" onclick="_handleSignIn()" title="Sign in to save" style="font-size:10px;letter-spacing:.08em;padding:4px 10px;border-radius:999px;color:rgba(201,160,80,.7);border-color:rgba(201,160,80,.3)">SIGN IN</button>
+    <div id="auth-avatar" style="display:none;width:28px;height:28px;border-radius:50%;background:rgba(201,160,80,.2);border:1px solid rgba(201,160,80,.3);cursor:pointer;align-items:center;justify-content:center;font-family:DM Mono,monospace;font-size:11px;color:rgba(201,160,80,.9);background-size:cover;background-position:center" onclick="_handleAvatarClick()" title="Signed in"></div>
+  </div>
+</header>
+
+<div id="conv"><div id="msgs"></div></div>
+<div id="ibar">
+  <div class="irow">
+    <textarea id="inp" rows="1" placeholder="Ask anything, in any language&#8230;"></textarea>
+    <button id="sbtn" onclick="send()">&#9658;</button>
+  </div>
+</div>
+
+<div id="welcome">
+  <div class="w-logo">SEMION<em>&#8482;</em></div>
+  <div class="w-line"></div>
+  <div class="w-sub">A quantum semiotic intelligence. It reads the structure of meaning &#8212; myth, entanglement, wavefunction &#8212; across 123 concepts, 94 cultural communities, and live web sources.</div>
+  <button class="w-start" onclick="dismissWelcome()">Begin &#8595;</button>
+  <div class="w-chips" id="w-chips-container"></div>
+</div>
+
+<div id="enc-panel">
+  <div class="enc-hdr">
+    <div class="enc-title">Semiotic Encoder</div>
+    <button class="icon-btn" style="margin-left:auto" onclick="closeEnc()">&#10005;</button>
+  </div>
+  <div class="enc-body">
+    <textarea class="enc-ta" id="einp" rows="3" placeholder="Enter any text to encode&#8230;"></textarea>
+    <div class="enc-row">
+      <select class="enc-sel" id="ectx"><option value="">No Context</option></select>
+      <button class="enc-btn" onclick="runEnc()">&#9889; Encode</button>
+    </div>
+    <div class="enc-chips" style="margin-top:10px" id="enc-chips-container"></div>
+    <div id="enc-out"><div style="text-align:center;padding:28px 0;font-family:DM Mono,monospace;font-size:10px;color:rgba(234,226,214,.2);letter-spacing:.18em">ENTER TEXT ABOVE TO ENCODE</div></div>
+  </div>
+</div>
+
+<div id="omnihub-panel">
+  <div class="oh-hdr">
+    <div class="oh-title">OmniHub<em style="color:var(--gold)">&#8482;</em></div>
+    <div class="oh-topic" id="oh-topic-label"></div>
+    <button class="icon-btn" style="margin-left:auto" onclick="closeOmniHub()">&#10005;</button>
+  </div>
+  <div class="oh-modes">
+    <div class="oh-mode active" id="ohm-lecture" onclick="setOhMode('lecture')"><span class="oh-mode-icon">&#127910;</span>Lecture</div>
+    <div class="oh-mode" id="ohm-animation" onclick="setOhMode('animation')"><span class="oh-mode-icon">&#10022;</span>Animation</div>
+    <div class="oh-mode" id="ohm-picture" onclick="setOhMode('picture')"><span class="oh-mode-icon">&#9672;</span>Image Prompt</div>
+    <div class="oh-mode" id="ohm-hyper" onclick="setOhMode('hyper')"><span class="oh-mode-icon">&#11041;</span>Hyperrealism</div>
+  </div>
+  <div class="oh-body" id="oh-body">
+    <div class="oh-loading" id="oh-loading">
+      <div class="oh-spinner"></div>
+      <div class="oh-loading-title" id="oh-loading-title">OmniHub</div>
+      <div class="oh-loading-sub" id="oh-loading-sub">Select a mode and generate</div>
+    </div>
+    <canvas id="oh-canvas" style="display:none;width:100%;height:100%"></canvas>
+    <div class="oh-progress" style="display:none" id="oh-progress"><div class="oh-progress-fill" id="oh-progress-fill" style="width:0%"></div></div>
+    <div class="oh-lecture-overlay" style="display:none" id="oh-overlay">
+      <div class="oh-chapter-label" id="oh-chapter-label">Chapter 1</div>
+      <div class="oh-narration" id="oh-narration"></div>
+    </div>
+    <div class="oh-image-wrap" id="oh-image-wrap" style="display:none">
+      <div class="oh-image-prompt"><div class="oh-prompt-label">Semiotic Image Prompt</div>
+      <div id="oh-prompt-text" style="white-space:pre-wrap"></div></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px">
+        <button class="oh-copy-btn" onclick="copyPrompt()">Copy for Midjourney / DALL&#183;E</button>
+        <button class="oh-copy-btn" onclick="generatePollinationsFromOH()" style="background:rgba(128,96,192,.12);border-color:rgba(128,96,192,.3);color:rgba(180,140,240,.9)">&#10022; Generate with Pollinations</button>
+      </div>
+      <div class="oh-semiotic-brief" id="oh-semiotic-brief"></div>
+    </div>
+  </div>
+  <div class="oh-controls">
+    <button class="oh-ctrl-btn primary" id="oh-gen-btn" onclick="generateOhContent()">&#9889; Generate</button>
+    <button class="oh-ctrl-btn" id="oh-play-btn" style="display:none" onclick="ohPlayPause()">&#9654; Play</button>
+    <div class="oh-spacer"></div>
+    <button class="oh-ctrl-btn" id="oh-prev-btn" style="display:none" onclick="ohPrev()">&#8592; Prev</button>
+    <button class="oh-ctrl-btn" id="oh-next-btn" style="display:none" onclick="ohNext()">Next &#8594;</button>
+  </div>
+</div>
+
+<nav id="bnav">
+  <div class="bni on" id="bn-chat" onclick="goHome()"><span>&#9672;</span>Chat</div>
+  <div class="bni" id="bn-enc" onclick="openEnc()"><span>&#9889;</span>Encode</div>
+  <div class="bni" id="bn-oh" onclick="openOmniHub()"><span>&#11041;</span>OmniHub</div>
+</nav>
+</div>
+
+<script>
+// SEMION_STATE — single source of truth, initialized before all modules
+var SEMION_STATE = {
+  sessionId: null, started: 0,
+  encoding: null, synthesis: null, classification: null,
+  history: [], semanticCheckpoint: null, turnCount: 0,
+  userModel: { culturalAnchor: null, mythBias: 0, typeFrequency: {}, recentConcepts: [] },
+  welcomeDismissed: false, msgCount: 0, currentPanel: null,
+  ohMode: 'lecture', ohTopic: '', ohEncoding: null,
+  imageURL: null, imagePrompt: null,
+  user: null, pendingSync: [], lastSyncAt: 0, cacheVersion: null, lastConvId: null
+};
+function _setState(p) { var k=Object.keys(p); for(var i=0;i<k.length;i++) SEMION_STATE[k[i]]=p[k[i]]; }
+</script>
+<script src="semion-data.js"></script>
+<script src="semion-engine.js"></script>
+<script src="semion-apis.js"></script>
+<script src="semion-learn.js"></script>
+<script src="semion-firebase.js"></script>
+<script src="semion-village.js"></script>
+<script src="semion-ui.js"></script>
+</body>
+</html>

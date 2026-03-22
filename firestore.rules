@@ -1,0 +1,82 @@
+rules_version = '2';
+// SEMION v4 Firestore Rules — semion-cca1c — Default deny
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isAuth()           { return request.auth != null; }
+    function isOwner(uid)       { return isAuth() && request.auth.uid == uid; }
+    function isAdmin()          { return isAuth() && request.auth.token.role == 'admin'; }
+    function isTeacher()        { return isAuth() && (request.auth.token.role == 'teacher' || request.auth.token.role == 'admin'); }
+    function validStr(f,n)      { return f is string && f.size() <= n; }
+    function validOptStr(f,n)   { return f == null || (f is string && f.size() <= n); }
+    function validNum(f,lo,hi)  { return f is number && f >= lo && f <= hi; }
+    function validOptNum(f,lo,hi){ return f == null || (f is number && f >= lo && f <= hi); }
+
+    match /users/{uid} {
+      allow read:  if isOwner(uid) || isAdmin();
+      allow write: if isOwner(uid)
+        && validOptStr(request.resource.data.display_name, 100)
+        && validOptStr(request.resource.data.email, 200)
+        && validOptStr(request.resource.data.photo_url, 500)
+        && request.resource.data.keys().hasOnly(['display_name','email','photo_url','preferred_language','preferences','last_active','created_at','role','opt_in_collective']);
+
+      match /analyses/{id} {
+        allow read:   if isOwner(uid) || isAdmin();
+        allow create: if isOwner(uid)
+          && validOptStr(request.resource.data.concept, 200)
+          && validStr(request.resource.data.question, 1000)
+          && validStr(request.resource.data.type, 30)
+          && validOptNum(request.resource.data.myth_index, 0, 1)
+          && validOptNum(request.resource.data.dominant_order, 1, 4)
+          && request.resource.data.created_at is number
+          && request.resource.data.keys().hasOnly(['concept','question','type','myth_index','dominant_order','cultural_anchor','language','sources_used','created_at','synced_from']);
+        allow update, delete: if isAdmin();
+      }
+
+      match /adjustments/{concept} {
+        allow read:  if isOwner(uid) || isAdmin();
+        allow write: if isOwner(uid)
+          && validStr(request.resource.data.concept, 200)
+          && validNum(request.resource.data.delta, -0.25, 0.25)
+          && validNum(request.resource.data.sample_size, 0, 10000)
+          && validNum(request.resource.data.confidence, 0, 1);
+      }
+
+      match /bookmarks/{concept} {
+        allow read:   if isOwner(uid) || isAdmin();
+        allow write:  if isOwner(uid)
+          && validStr(request.resource.data.concept, 200)
+          && validOptNum(request.resource.data.myth_index, 0, 1)
+          && validOptStr(request.resource.data.note, 2000)
+          && request.resource.data.created_at is number;
+        allow delete: if isOwner(uid);
+      }
+
+      match /checkpoints/{sessionId} {
+        allow read:  if isOwner(uid) || isAdmin();
+        allow write: if isOwner(uid)
+          && validStr(request.resource.data.session_id, 100)
+          && validStr(request.resource.data.checkpoint, 50000)
+          && request.resource.data.created_at is number;
+      }
+
+      match /rate_limits/{window} {
+        allow read:  if isOwner(uid);
+        allow write: if false;
+      }
+    }
+
+    match /collective/{doc=**}       { allow read, write: if false; }
+    match /cache_version/semion_data { allow read: if isAuth(); allow write: if isAdmin(); }
+    match /system/{doc=**}           { allow read: if isAdmin(); allow write: if isAdmin(); }
+
+    match /groups/{groupId} {
+      allow read:  if isTeacher() || isAdmin();
+      allow write: if isAdmin();
+      match /members/{uid} {
+        allow read:  if isTeacher() || isOwner(uid);
+        allow write: if isAdmin();
+      }
+    }
+  }
+}
