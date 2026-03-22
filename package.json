@@ -1,0 +1,14 @@
+{
+  "name": "semion-functions",
+  "version": "4.0.0",
+  "description": "SEMION v4 Firebase Cloud Functions",
+  "engines": { "node": "18" },
+  "main": "index.js",
+  "dependencies": {
+    "firebase-admin": "^11.11.0",
+    "firebase-functions": "^4.5.0",
+    "node-fetch": "^2.7.0",
+    "cors": "^2.8.5"
+  },
+  "private": true
+}
